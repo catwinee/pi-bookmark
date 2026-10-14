@@ -30,13 +30,9 @@ export default function (pi: ExtensionAPI) {
 
 	const updateStatus = (ctx: ExtensionContext): void => {
 		if (!ctx.hasUI) return;
-		const id = ctx.sessionManager.getSessionId();
-		const bookmark = id ? store.find(id) : undefined;
-		if (!bookmark) {
-			ctx.ui.setStatus(STATUS_ID, undefined);
-			return;
-		}
-		ctx.ui.setStatus(STATUS_ID, `\u001b[999C${ctx.ui.theme.fg("accent", "◢")}`);
+		// Local customization: retain bookmarks without a footer marker or status row.
+		// Clear the entry rather than setting an empty/hidden string.
+		ctx.ui.setStatus(STATUS_ID, undefined);
 	};
 
 	const silentRefresh = (ctx: ExtensionContext): void => {
