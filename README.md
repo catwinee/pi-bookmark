@@ -70,7 +70,7 @@ The model can call the `pin_session` tool (`add` / `remove` / `list`) when you a
 | `ctrl+r` | edit note |
 | `esc` | close |
 
-Rows are unmarked — the picker simply lists pinned sessions (the current session is auto-selected; pressing enter on it says "Already in this session"). Missing files show `missing` and cannot be opened. A solid `◢` appears at the far right of the footer, under the model name, when the session you are in is pinned.
+Rows are unmarked — the picker simply lists pinned sessions (the current session is auto-selected; pressing enter on it says "Already in this session"). Missing files show `missing` and cannot be opened. In this local fork, a pinned session publishes `Pinned · <name>` as its status. The local custom-footer integration places it in blue at the right of the first footer row, without an extra status row. See [LOCAL.md](LOCAL.md) for the Workspace checkout and integration details.
 
 ## Storage
 

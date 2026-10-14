@@ -3,10 +3,9 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { bookmarkTitle, firstUserPreview } from "./format.js";
+import { BOOKMARK_STATUS_ID, pinnedStatus } from "./footer-status.js";
 import { BookmarkSelector, type BookmarkPickerResult } from "./overlay.js";
 import { BookmarkStore, type Bookmark } from "./store.js";
-
-const STATUS_ID = "pi-bookmark";
 
 export default function (pi: ExtensionAPI) {
 	const store = BookmarkStore.default();
@@ -30,9 +29,9 @@ export default function (pi: ExtensionAPI) {
 
 	const updateStatus = (ctx: ExtensionContext): void => {
 		if (!ctx.hasUI) return;
-		// Local customization: retain bookmarks without a footer marker or status row.
-		// Clear the entry rather than setting an empty/hidden string.
-		ctx.ui.setStatus(STATUS_ID, undefined);
+		const id = ctx.sessionManager.getSessionId();
+		const bookmark = id ? store.find(id) : undefined;
+		ctx.ui.setStatus(BOOKMARK_STATUS_ID, pinnedStatus(bookmark));
 	};
 
 	const silentRefresh = (ctx: ExtensionContext): void => {
@@ -147,6 +146,10 @@ export default function (pi: ExtensionAPI) {
 		updateStatus(ctx);
 	});
 
+	pi.on("session_shutdown", async (_event, ctx) => {
+		if (ctx.hasUI) ctx.ui.setStatus(BOOKMARK_STATUS_ID, undefined);
+	});
+
 	pi.registerCommand("pin", {
 		description: "Pin this session. /pin [note] · list · rm · prune",
 		getArgumentCompletions: (prefix) => {
@@ -177,6 +180,7 @@ export default function (pi: ExtensionAPI) {
 			const existing = id ? store.find(id) : undefined;
 
 			if (existing && !text) {
+				updateStatus(ctx);
 				ctx.ui.notify(`Already pinned: ${bookmarkTitle(existing)}`, "info");
 				return;
 			}

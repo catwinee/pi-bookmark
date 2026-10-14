@@ -1,0 +1,44 @@
+--- a/dpsk-footer.ts
++++ b/dpsk-footer.ts
+@@ -20,6 +20,7 @@
+ import type { AssistantMessage } from "@earendil-works/pi-ai";
+ import { getAgentDir, type ExtensionAPI, type ExtensionContext } from "@earendil-works/pi-coding-agent";
+ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
++import { BOOKMARK_STATUS_ID, renderPinnedFooterLine } from "../../../Workspace/pi-bookmark/extensions/footer-status.ts";
+ 
+ // ---------------------------------------------------------------- 峰谷规则
+ 
+@@ -479,19 +480,20 @@
+ 					const padding = " ".repeat(Math.max(0, width - visibleWidth(statsLeft) - visibleWidth(right)));
+ 					const statsLine = visibleWidth(right) === 0 ? statsLeft : statsLeft + padding + right;
+ 
+-					// ---- 第一行：cwd / 分支 / 会话名 ----
++					// ---- 第一行：左侧 cwd / 分支；已 pin 时右侧蓝色 Pinned · 名字 ----
+ 					let pwd = formatCwd(session.sessionManager.getCwd(), process.env.HOME ?? homedir());
+ 					const branch = footerData.getGitBranch();
+ 					if (branch) pwd = `${pwd} (${branch})`;
+ 					const sessionName = session.sessionManager.getSessionName();
+-					if (sessionName) pwd = `${pwd} • ${sessionName}`;
++					const pinStatus = statuses.get(BOOKMARK_STATUS_ID);
++					if (sessionName && !pinStatus) pwd = `${pwd} • ${sessionName}`;
+ 
+-					const lines = [truncateToWidth(theme.fg("dim", pwd), width, theme.fg("dim", "...")), statsLine];
++					const lines = [renderPinnedFooterLine(pwd, pinStatus, width, theme), statsLine];
+ 
+-					// ---- 第三行：其他扩展状态文本（Codex 已由第二行接管，窄屏不另起一行） ----
++					// ---- 第三行：其他扩展状态（pin 已由第一行接管，Codex 由第二行接管） ----
+ 					if (statuses.size > 0) {
+ 						const text = Array.from(statuses.entries())
+-							.filter(([key]) => key !== "codex-weekly")
++							.filter(([key]) => key !== "codex-weekly" && key !== BOOKMARK_STATUS_ID)
+ 							.sort(([a], [b]) => a.localeCompare(b))
+ 							.map(([, value]) => String(value).replace(/[\r\n\t]+/g, " ").replace(/ +/g, " ").trim())
+ 							.join(" ");
+@@ -504,6 +506,7 @@
+ 	});
+ 
+ 	// ctx 每个事件都会换新，持续记住最新的一份，保证 render 拿到当前模型/思考级别
++	pi.on("session_info_changed", async (_event, context) => remember(context));
+ 	pi.on("model_select", async (_event, context) => remember(context));
+ 	pi.on("thinking_level_select", async (_event, context) => remember(context));
+ 	pi.on("turn_start", async (_event, context) => remember(context));
